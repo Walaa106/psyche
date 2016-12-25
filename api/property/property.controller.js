@@ -7,7 +7,6 @@
 
 var _ = require('lodash');
 var request = require('request');
-var range = require('node-range');
 var $q = require('q');
 
 var async = require('asyncawait/async');
@@ -22,22 +21,27 @@ exports.index = async(function(req, res) {
     var size = req.query.size || 50
     var page_limit = req.query.page || 10
 
-    var pages_arr = range(0,page_limit).toArray().map(function(i) { return i })
-    console.log(pages_arr);
+    var size = 10;
+    var page = 0;
 
+    while (page <= 1050) {
+        var properties = await (getPropertiesByElastic(size, page));
+        var indexed_properties = await (indexing(properties, size, page));
+        var waiting_time = 60*60
 
-    // var all = await (pages_arr.map(async(function(page) {
-    //               var wait = await (getAndIndex(size, page))
-    //               return wait;
-    //             })));
-    // return res.json(all);
+        setTimeout(function() {
+            page+=size;
+            console.warn('Here you go:', page);
+        }, waiting_time);
+    }
+
+    return res.json({'done': true});
 });
 
 
-var getAndIndex = async(function(size, page_number) {
-    var properties = await (getPropertiesByElastic(size, page_number));
-
+var indexing = async(function(properties, size, page_number) {
     var results = await (_.map(properties, async(function(property, index) {
+
         console.warn('### ' + page_number + '##' + index + ' ### Start indexing property ...');
         console.log('.... ID#: ' + property._id);
         var res = await (indexPorpertyHealth(property._id));
@@ -72,7 +76,7 @@ var indexPorpertyHealth = function(property_id) {
     return deferred.promise;
 }
 
-var getPropertiesByElastic = function(size, page_number) {
+var getPropertiesByElastic = async(function(size, page_number) {
     var elastic = config.elastic;
     var client = new elasticsearch.Client({
         host: elastic.host
@@ -81,18 +85,17 @@ var getPropertiesByElastic = function(size, page_number) {
     var response = await (client.search({
         index: 'properties',
         type: 'property',
-        size: size,
         from: page_number,
+        size: size,
         body: {
             "fields": ["en.name", "en.id"],
             "query": {
-                "match": { "en.supplier_id": "1" }
-            },
-            "sort": { "created_at": { "order": "asc" } }
+                "term": { "en.supplier_id": "1" }
+            }
         }
     }));
 
     if (response && response.hits && response.hits.hits) {
         return response.hits.hits;
     }
-}
+})
