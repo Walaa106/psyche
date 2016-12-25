@@ -16,28 +16,27 @@ var elasticsearch = require('elasticsearch');
 var config = require('../../config/config');
 
 exports.index = async(function(req, res) {
-    // var size = req.query.size || 50
-    var size = req;
-    var all = [];
-    var page = 1;
-    while (page <= 2) {
-        var wait = await (getAndIndex(size, page))
-        all.push(wait);
-        page++;
-    }
-    // return res.json({ data: all })
+    // var size = req;
+    // var page_limit = res;
+    var size = req.query.size || 50
+    var page_limit = req.query.page || 10
+    var wait = await (getAndIndex(size, page_limit))
+    return res.json({ data: wait })
 });
 
 
 var getAndIndex = async(function(size, page_number) {
     var properties = await (getPropertiesByElastic(size, page_number));
+    return properties
     var results = await (_.map(properties, async(function(property, index) {
-        console.warn('### ' + index + ' ### Start indexing property ...', property._source);
+        property = await (property);
+        console.warn('### ' + page_number + '##' + index + ' ### Start indexing property ...');
         console.info('.... Name: ' + property._source.en.name);
         console.log('.... ID#: ' + property._id);
         return await (indexPorpertyHealth(property._id));
     })));
     return results;
+
 })
 
 var indexPorpertyHealth = function(property_id) {
@@ -62,47 +61,21 @@ var getPropertiesByElastic = function(size, page_number) {
     var client = new elasticsearch.Client({
         host: elastic.host
     });
-    var deferred = $q.defer();
 
-    client.search({
+    var response = await(client.search({
         index: 'properties',
-        size: size,
-        from: page_number,
+        type: 'property',
+        size: 1000,
+        from: 0,
         body: {
-            "query": getQuery
+            "fields" : ["en.name", "en.id"],
+            "query": {
+                "match": { "en.supplier_id": "1" }
+            }
         }
-    }).then(function(response) {
-        var hits = response.hits.hits;
-        deferred.resolve(hits);
-    }, function(error) {
-        deferred.resolve(error);
-    });
-    return deferred.promise;
-}
+    }));
 
-var getQuery = function() {
-    return {
-        "match_all": {
-            "supplier_id": 1
-        }
+    if (response && response.hits && response.hits.hits) {
+      return response.hits.hits;
     }
 }
-
-var getProperties = function(page_number) {
-    //- last_page
-    var url = config.api + '/seo/properties?page=' + page_number;
-    var deferred = $q.defer();
-    request({
-        url: url,
-        method: 'GET'
-    }, function(error, response, body) {
-        if (!error && response.statusCode == 200) {
-            var data = JSON.parse(body).properties;
-            deferred.resolve(data.data);
-        } else {
-            deferred.resolve(error);
-        }
-    });
-    return deferred.promise;
-}
-require('make-runnable');

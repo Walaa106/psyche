@@ -9,12 +9,12 @@ var config = {
       name: 'psyche'
     },
     port: process.env.PORT || 3000,
-    endpoint: 'https://xxifk8vkka.execute-api.us-east-1.amazonaws.com/prod/healthy-berry-staging-index',
+    endpoint: 'https://egj889w24h.execute-api.eu-west-1.amazonaws.com/staging/healthy-berry-staging-index',
     api: 'https://api-staging.yamsafer.me/',
     elastic: {
-      host: 'localhost:9200',
+      host: 'elastic-staging.yamsafer.me:9200',
       type: 'property',
-      index: 'properties'
+      index: 'extranet_properties'
     }
   },
 
@@ -24,7 +24,7 @@ var config = {
       name: 'psyche'
     },
     port: process.env.PORT || 3000,
-    endpoint: 'https://xxifk8vkka.execute-api.us-east-1.amazonaws.com/prod/healthy-berry-staging-index',
+    endpoint: 'https://egj889w24h.execute-api.eu-west-1.amazonaws.com/staging/healthy-berry-staging-index',
     api: 'https://api-staging.yamsafer.me/',
     elastic: {
       host: 'elastic-staging.yamsafer.me:9200',
