@@ -27,7 +27,7 @@ exports.index = async(function(req, res) {
     while (page <= 1050) {
         var properties = await (getPropertiesByElastic(size, page));
         var indexed_properties = await (indexing(properties, size, page));
-        var waiting_time = 60*60
+        var waiting_time = 60*60*2
 
         setTimeout(function() {
             page+=size;
